@@ -631,10 +631,26 @@ async function launchApp(){
 // SUPABASE API HELPERS
 // ─────────────────────────────────────────────
 async function sbGet(table,params){
-  var url=SUPABASE_URL+'/rest/v1/'+table+'?'+(params||'order=created_at.asc&limit=10000');
-  var r=await fetch(url,{headers:sbHeaders(true)});
-  if(!r.ok)throw new Error(await r.text());
-  return r.json();
+  // Paginate in chunks of 1000 to work around Supabase free tier row limit
+  if(params){
+    // custom params — single request, no pagination
+    var url=SUPABASE_URL+'/rest/v1/'+table+'?'+params;
+    var r=await fetch(url,{headers:sbHeaders(true)});
+    if(!r.ok)throw new Error(await r.text());
+    return r.json();
+  }
+  var all=[];var from=0;var chunkSize=1000;
+  while(true){
+    var url=SUPABASE_URL+'/rest/v1/'+table+'?order=created_at.asc&limit='+chunkSize+'&offset='+from;
+    var h=Object.assign({},sbHeaders(true),{'Range-Unit':'items','Range':from+'-'+(from+chunkSize-1),'Prefer':'count=none'});
+    var r=await fetch(url,{headers:h});
+    if(!r.ok)throw new Error(await r.text());
+    var chunk=await r.json();
+    all=all.concat(chunk);
+    if(chunk.length<chunkSize)break;
+    from+=chunkSize;
+  }
+  return all;
 }
 async function sbUpsert(table,data,onConflict){
   var url=SUPABASE_URL+'/rest/v1/'+table+(onConflict?'?on_conflict='+onConflict:'');

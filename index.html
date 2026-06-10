@@ -781,7 +781,7 @@ async function registerInvoice(){
   catch(e){setLoading(false);alert('Feil: '+e.message);}
 }
 function clearRegForm(){['reg-sender','reg-invno','reg-date','reg-cost','reg-supplier'].forEach(function(id){document.getElementById(id).value='';}); }
-function populateSplitSelect(){var sel=document.getElementById('split-invoice-select');var cur=sel.value;sel.innerHTML='<option value="">— velg faktura —</option>';invoices.forEach(function(inv){var o=document.createElement('option');o.value=inv.id;o.textContent=inv.invno+' · '+fmt(inv.cost)+' NOK · '+inv.date;sel.appendChild(o);});if(cur)sel.value=cur;}
+function populateSplitSelect(){var sel=document.getElementById('split-invoice-select');var cur=sel.value;sel.innerHTML='<option value="">— velg faktura —</option>';invoices.filter(function(inv){return!inv.split;}).forEach(function(inv){var o=document.createElement('option');o.value=inv.id;o.textContent=inv.invno+' · '+fmt(inv.cost)+' NOK · '+inv.date;sel.appendChild(o);});if(cur)sel.value=cur;}
 function fillInvoiceDetails(){var id=document.getElementById('split-invoice-select').value;var inv=invoices.find(function(i){return i.id===id;});document.getElementById('split-invno').value=inv?inv.invno:'';document.getElementById('split-cost').value=inv?fmt(inv.cost):'';document.getElementById('split-sender').value=inv?inv.sender:'';document.getElementById('split-date').value=inv?inv.date:'';document.getElementById('split-output').innerHTML='';}
 
 // ─────────────────────────────────────────────

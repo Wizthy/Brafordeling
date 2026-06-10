@@ -470,7 +470,10 @@ tr:hover td{background:#f9fafb}
   <div class="drawer" style="max-width:660px" onclick="event.stopPropagation()">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px">
       <div><h3>Fordelingsrapport</h3><p class="sub" id="report-subtitle" style="margin-bottom:0"></p></div>
-      <button class="btn btn-primary" onclick="exportReport()"><i class="ti ti-file-export"></i> Eksporter Excel</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-ghost" onclick="exportDeltakerliste()"><i class="ti ti-users"></i> Eksporter deltakerliste</button>
+        <button class="btn btn-primary" onclick="exportReport()"><i class="ti ti-file-export"></i> Eksporter Excel</button>
+      </div>
     </div>
     <div id="report-content"></div>
     <div class="drawer-actions"><button class="btn btn-ghost" onclick="document.getElementById('report-overlay').classList.remove('open')">Lukk</button></div>
@@ -851,6 +854,8 @@ var allResults=sd.allResults||sd.active.map(function(r){return Object.assign({},
 var pData=[['Deltakerliste – '+inv.invno],[],['E-post','Navn','Koststed','Koststed navn','Status','Beløp (NOK)'],...allResults.map(function(r){var status=r.isSuperuser?'Superbruker':r.found?(r.status==='N'?'N – Aktiv':'S – Inaktiv'):'Ikke funnet';var amt=(!r.isSuperuser&&r.status==='N')?parseFloat(sd.splitAmt.toFixed(2)):'';return[r.email,r.name||'',r.koststed||'',r.koststedNavn||'',status,amt];})];
 var ws2=XLSX.utils.aoa_to_sheet(pData);ws2['!cols']=[{wch:36},{wch:24},{wch:10},{wch:24},{wch:14},{wch:14}];XLSX.utils.book_append_sheet(wb,ws2,'Deltakerliste');
 var safeSender=(inv.sender||'Ukjent').replace(/[^a-zA-Z0-9æøåÆØÅ_-]/g,'_').replace(/_+/g,'_').replace(/^_|_$/g,'');XLSX.writeFile(wb,safeSender+'_'+inv.invno+'_'+inv.date+'.xlsx');}
+
+function exportDeltakerliste(){if(!currentReport)return;var inv=currentReport;var sd=inv.splitData;var allResults=sd.allResults||sd.active.map(function(r){return Object.assign({},r,{found:true,isSuperuser:false});});var pData=[['Deltakerliste – '+inv.invno],[],['Sendt av',inv.sender],['Fakturanummer',inv.invno],['Dato',inv.date],[],['E-post','Navn','Koststed','Koststed navn','Status','Beløp (NOK)'],...allResults.map(function(r){var status=r.isSuperuser?'Superbruker':r.found?(r.status==='N'?'N – Aktiv':'S – Inaktiv'):'Ikke funnet';var amt=(!r.isSuperuser&&r.status==='N')?parseFloat(sd.splitAmt.toFixed(2)):'';return[r.email,r.name||'',r.koststed||'',r.koststedNavn||'',status,amt];})];var wb=XLSX.utils.book_new();var ws=XLSX.utils.aoa_to_sheet(pData);ws['!cols']=[{wch:36},{wch:24},{wch:10},{wch:24},{wch:14},{wch:14}];XLSX.utils.book_append_sheet(wb,ws,'Deltakerliste');var safeSender=(inv.sender||'Ukjent').replace(/[^a-zA-Z0-9æøåÆØÅ_-]/g,'_').replace(/_+/g,'_').replace(/^_|_$/g,'');XLSX.writeFile(wb,'Deltakerliste_'+safeSender+'_'+inv.invno+'_'+inv.date+'.xlsx');}
 
 // ─────────────────────────────────────────────
 // STATUS LOOKUP

@@ -729,7 +729,7 @@ function buildDropdown(col){
 function toggleVal(col,val,checked){var f=filters[col];var allVals=getColumnValues(col);if(f.selected.size===0)allVals.forEach(function(v){f.selected.add(v);});if(checked)f.selected.add(val);else f.selected.delete(val);if(f.selected.size===allVals.length)f.selected.clear();applyFilters();buildDropdown(col);}
 function getColumnValues(col){var vals=new Set();invoices.forEach(function(i){if(col==='invno')vals.add(i.invno||'');else if(col==='sender')vals.add(i.sender||'');else if(col==='supplier')vals.add(i.supplier||'');else if(col==='status')vals.add(i.split?'Fordelt':'Venter');});return[...vals].sort();}
 function isFiltered(col){if(col==='date')return filters.date.from||filters.date.to;if(col==='cost')return filters.cost.min!==''||filters.cost.max!=='';return filters[col].selected.size>0;}
-function applyFilters(){renderInvoiceTable();renderFilterChips();['invno','sender','supplier','cost','date','status'].forEach(function(col){var th=document.getElementById('th-'+col);var fb=document.getElementById('fb-'+col);if(th)th.classList.toggle('filtered',!!isFiltered(col));if(fb)fb.classList.toggle('active',!!isFiltered(col));});}
+function applyFilters(){renderInvoiceTable();renderMetrics();renderFilterChips();['invno','sender','supplier','cost','date','status'].forEach(function(col){var th=document.getElementById('th-'+col);var fb=document.getElementById('fb-'+col);if(th)th.classList.toggle('filtered',!!isFiltered(col));if(fb)fb.classList.toggle('active',!!isFiltered(col));});}
 function clearAllFilters(){['invno','sender','supplier','status'].forEach(function(col){filters[col]={selected:new Set(),search:''};});filters.date={from:'',to:''};filters.cost={min:'',max:''};applyFilters();}
 function renderFilterChips(){var bar=document.getElementById('active-filters-bar');var chips='';['invno','sender','supplier','status'].forEach(function(col){if(filters[col].selected.size>0){var label={invno:'Faktura nr.',sender:'Navn',supplier:'Leverandør',status:'Status'}[col];chips+='<span class="af-chip">'+label+': '+[...filters[col].selected].join(', ')+' <button onclick="filters[\''+col+'\'].selected.clear();applyFilters()">×</button></span>';}});if(filters.date.from||filters.date.to){chips+='<span class="af-chip">Dato: '+(filters.date.from||'')+(filters.date.from&&filters.date.to?' – ':'')+( filters.date.to||'')+' <button onclick="filters.date={from:\'\',to:\'\'};applyFilters()">×</button></span>';}if(filters.cost.min!==''||filters.cost.max!==''){chips+='<span class="af-chip">Kostnad: '+(filters.cost.min||'0')+' – '+(filters.cost.max||'∞')+' NOK <button onclick="filters.cost={min:\'\',max:\'\'};applyFilters()">×</button></span>';}bar.innerHTML=chips;}
 function getFilteredInvoices(){return invoices.filter(function(i){if(filters.invno.selected.size>0&&!filters.invno.selected.has(i.invno||''))return false;if(filters.sender.selected.size>0&&!filters.sender.selected.has(i.sender||''))return false;if(filters.supplier.selected.size>0&&!filters.supplier.selected.has(i.supplier||''))return false;if(filters.status.selected.size>0){var s=i.split?'Fordelt':'Venter';if(!filters.status.selected.has(s))return false;}if(filters.date.from&&i.date<filters.date.from)return false;if(filters.date.to&&i.date>filters.date.to)return false;if(filters.cost.min!==''&&i.cost<parseFloat(filters.cost.min))return false;if(filters.cost.max!==''&&i.cost>parseFloat(filters.cost.max))return false;return true;});}
@@ -738,9 +738,24 @@ function getFilteredInvoices(){return invoices.filter(function(i){if(filters.inv
 // DASHBOARD
 // ─────────────────────────────────────────────
 function renderDashboard(){
-  var total=invoices.reduce(function(s,i){return s+i.cost;},0);var split=invoices.filter(function(i){return i.split;}).length;
-  document.getElementById('metrics').innerHTML='<div class="metric"><div class="metric-label">Totalt fakturaer</div><div class="metric-value">'+invoices.length+'</div></div><div class="metric"><div class="metric-label">Venter</div><div class="metric-value" style="color:#d97706">'+(invoices.length-split)+'</div></div><div class="metric"><div class="metric-label">Fordelt</div><div class="metric-value" style="color:#065f46">'+split+'</div></div><div class="metric"><div class="metric-label">Totalverdi (NOK)</div><div class="metric-value" style="color:#009EB2">'+fmt(total)+'</div></div><div class="metric"><div class="metric-label">Aktive ansatte</div><div class="metric-value">'+employees.filter(function(e){return e.status==='N';}).length+'</div></div><div class="metric"><div class="metric-label">Superbrukere</div><div class="metric-value" style="color:#5b21b6">'+superusers.length+'</div></div>';
+  renderMetrics();
   renderInvoiceTable();renderFilterChips();
+}
+function renderMetrics(){
+  var hasFilters=['invno','sender','supplier','status'].some(function(c){return filters[c].selected.size>0;})||filters.date.from||filters.date.to||filters.cost.min!==''||filters.cost.max!=='';
+  var list=hasFilters?getFilteredInvoices():invoices;
+  var total=list.reduce(function(s,i){return s+i.cost;},0);
+  var splitCount=list.filter(function(i){return i.split;}).length;
+  var pending=list.length-splitCount;
+  var isAll=!hasFilters;
+  var filterNote=hasFilters?'<div style="font-size:10px;color:#009EB2;margin-top:3px;font-weight:500">▼ filtrert</div>':'';
+  document.getElementById('metrics').innerHTML=
+    '<div class="metric"><div class="metric-label">Fakturaer'+(hasFilters?' <span style="font-size:10px;color:#009EB2;font-weight:600">(filtrert)</span>':'')+'</div><div class="metric-value">'+list.length+(isAll?'':' <span style="font-size:12px;color:#9ca3af;font-weight:400">/ '+invoices.length+'</span>')+'</div></div>'
+   +'<div class="metric"><div class="metric-label">Venter</div><div class="metric-value" style="color:#d97706">'+pending+'</div>'+filterNote+'</div>'
+   +'<div class="metric"><div class="metric-label">Fordelt</div><div class="metric-value" style="color:#065f46">'+splitCount+'</div>'+filterNote+'</div>'
+   +'<div class="metric"><div class="metric-label">Totalverdi (NOK)</div><div class="metric-value" style="color:#009EB2">'+fmt(total)+'</div>'+filterNote+'</div>'
+   +'<div class="metric"><div class="metric-label">Aktive ansatte</div><div class="metric-value">'+employees.filter(function(e){return e.status==='N';}).length+'</div></div>'
+   +'<div class="metric"><div class="metric-label">Superbrukere</div><div class="metric-value" style="color:#5b21b6">'+superusers.length+'</div></div>';
 }
 function renderInvoiceTable(){
   var list=[...getFilteredInvoices()].reverse();var tbody=document.getElementById('inv-tbody');if(!tbody)return;

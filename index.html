@@ -253,6 +253,7 @@ tr:hover td{background:#f9fafb}
   <button class="nav-btn active" id="nb-dashboard" onclick="showPage('dashboard',this)">Dashboard</button>
   <button class="nav-btn" id="nb-register" onclick="showPage('register',this)">Register faktura</button>
   <button class="nav-btn" id="nb-split" onclick="showPage('split',this)">Fordel kostnad</button>
+  <button class="nav-btn" id="nb-lookup" onclick="showPage('lookup',this)">Sjekk status</button>
   <button class="nav-btn" id="nb-employees" onclick="showPage('employees',this)">Brukere</button>
   <button class="nav-btn" id="nb-superusers" onclick="showPage('superusers',this)">Superbrukere</button>
 </div>
@@ -331,6 +332,24 @@ tr:hover td{background:#f9fafb}
     <button class="btn btn-primary" onclick="runSplit()"><i class="ti ti-search"></i> Søk opp &amp; fordel</button>
   </div>
   <div id="split-output"></div>
+</div>
+
+<!-- LOOKUP / STATUS CHECK -->
+<div class="page" id="page-lookup">
+  <h2>Sjekk status</h2>
+  <p class="subtitle">Lim inn e-poster for å raskt sjekke om ansatte er aktive, inaktive eller har sluttet</p>
+  <div class="card">
+    <div class="section-head"><span style="font-size:14px;font-weight:600;color:#0D2240">E-poster å sjekke</span></div>
+    <div class="form-row one"><div>
+      <label>Lim inn e-poster — én per linje, eller komma/semikolon separert</label>
+      <textarea id="lookup-emails" placeholder="fornavn.etternavn@bravida.no&#10;..." style="min-height:110px"></textarea>
+    </div></div>
+    <div style="display:flex;gap:8px;align-items:center;margin-top:4px">
+      <button class="btn btn-primary" onclick="runLookup()"><i class="ti ti-search"></i> Sjekk status</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('lookup-emails').value='';document.getElementById('lookup-output').innerHTML=''">Fjern</button>
+    </div>
+  </div>
+  <div id="lookup-output"></div>
 </div>
 
 <!-- EMPLOYEES -->
@@ -817,6 +836,74 @@ var allResults=sd.allResults||sd.active.map(function(r){return Object.assign({},
 var pData=[['Deltakerliste – '+inv.invno],[],['E-post','Navn','Koststed','Koststed navn','Status','Beløp (NOK)'],...allResults.map(function(r){var status=r.isSuperuser?'Superbruker':r.found?(r.status==='N'?'N – Aktiv':'S – Inaktiv'):'Ikke funnet';var amt=(!r.isSuperuser&&r.status==='N')?parseFloat(sd.splitAmt.toFixed(2)):'';return[r.email,r.name||'',r.koststed||'',r.koststedNavn||'',status,amt];})];
 var ws2=XLSX.utils.aoa_to_sheet(pData);ws2['!cols']=[{wch:36},{wch:24},{wch:10},{wch:24},{wch:14},{wch:14}];XLSX.utils.book_append_sheet(wb,ws2,'Deltakerliste');
 XLSX.writeFile(wb,'Fordeling_'+inv.invno+'_'+inv.date+'.xlsx');}
+
+// ─────────────────────────────────────────────
+// STATUS LOOKUP
+// ─────────────────────────────────────────────
+function runLookup(){
+  var raw=document.getElementById('lookup-emails').value;
+  var emails=raw.split(/[\n,;]+/).map(function(e){return e.trim().toLowerCase();}).filter(Boolean);
+  if(!emails.length){alert('Lim inn minst én e-post.');return;}
+  if(!employees.length){alert('Ansattdatabasen er tom. Importer ansatte først.');return;}
+  var superSet=new Set(superusers.map(function(s){return s.epost;}));
+  var results=emails.map(function(email){
+    if(superSet.has(email)){var su=superusers.find(function(s){return s.epost===email;});return{email:email,found:true,isSuperuser:true,name:su.fulltNavn||email,koststed:su.koststed||'—',koststedNavn:'—',status:'superuser',lisens:su.lisens||'',sluttdato:''};}
+    var emp=employees.find(function(e){return e.epost===email;});
+    return{email:email,found:!!emp,isSuperuser:false,name:emp?emp.fulltNavn:'Ukjent',koststed:emp?emp.koststed:'—',koststedNavn:emp?emp.koststedNavn:'—',status:emp?emp.status:'?',ansattnr:emp?emp.ansattnr:'',ansettelsesdato:emp?emp.ansettelsesdato:'',sluttdato:emp?emp.sluttdato:''};
+  });
+  var active=results.filter(function(r){return !r.isSuperuser&&r.status==='N';});
+  var inactive=results.filter(function(r){return !r.isSuperuser&&r.found&&r.status!=='N';});
+  var notFound=results.filter(function(r){return !r.isSuperuser&&!r.found;});
+  var suFound=results.filter(function(r){return r.isSuperuser;});
+
+  var html='<div class="card"><div class="section-head"><span style="font-size:14px;font-weight:600;color:#0D2240">Resultat</span>'
+    +'<div style="display:flex;gap:6px;flex-wrap:wrap">'
+    +'<span class="badge">'+emails.length+' e-poster</span>'
+    +(active.length?'<span class="badge" style="background:#d1fae5;color:#065f46;border-color:#a7f3d0">'+active.length+' aktive (N)</span>':'')
+    +(inactive.length?'<span class="badge" style="background:#fef2f2;color:#991b1b;border-color:#fecaca">'+inactive.length+' inaktive (S)</span>':'')
+    +(notFound.length?'<span class="badge" style="background:#fef3c7;color:#92400e;border-color:#fde68a">'+notFound.length+' ikke funnet</span>':'')
+    +(suFound.length?'<span class="badge" style="background:#ede9fe;color:#4c1d95;border-color:#c4b5fd">'+suFound.length+' superbruker'+(suFound.length>1?'e':'')+'</span>':'')
+    +'</div></div>';
+
+  // Warning banner if anyone is inactive or not found
+  var flagged=inactive.length+notFound.length;
+  if(flagged>0){
+    html+='<div class="alert alert-warn" style="display:flex;align-items:center;gap:8px"><i class="ti ti-alert-triangle"></i> <strong>'+flagged+' person'+(flagged>1?'er':'')+'</strong> er inaktive eller ikke funnet i databasen — disse bør kontrolleres.</div>';
+  } else {
+    html+='<div class="alert alert-info"><i class="ti ti-check"></i> Alle '+active.length+' e-poster tilhører aktive (N) ansatte.</div>';
+  }
+
+  html+='<div style="border:1px solid #f3f4f6;border-radius:8px;overflow:hidden">';
+  results.forEach(function(r){
+    var isActive=!r.isSuperuser&&r.status==='N';
+    var isInactive=!r.isSuperuser&&r.found&&r.status!=='N';
+    var initials=r.name.split(' ').filter(Boolean).slice(0,2).map(function(n){return n[0];}).join('').toUpperCase()||'?';
+    var bg=r.isSuperuser?'#ede9fe':isActive?'#d1fae5':r.found?'#fef2f2':'#fef3c7';
+    var col=r.isSuperuser?'#4c1d95':isActive?'#065f46':r.found?'#991b1b':'#92400e';
+    var rowBg=isInactive?'background:#fffbfb;':(!r.found&&!r.isSuperuser?'background:#fffdf0;':'');
+    var statusTag=r.isSuperuser
+      ?'<span class="tag tag-super"><i class="ti ti-star" style="font-size:10px"></i> Superbruker</span>'
+      :r.found
+        ?(r.status==='N'?'<span class="tag tag-n">N – Aktiv</span>':'<span class="tag" style="background:#fef2f2;color:#991b1b;border:1px solid #fecaca">S – Inaktiv</span>')
+        :'<span class="tag tag-warn">Ikke funnet</span>';
+    var meta=[];
+    if(r.koststed&&r.koststed!=='—')meta.push(r.koststed+(r.koststedNavn&&r.koststedNavn!=='—'?' · '+r.koststedNavn:''));
+    if(r.sluttdato)meta.push('<span style="color:#dc2626">Sluttet: '+r.sluttdato+'</span>');
+    else if(r.ansettelsesdato)meta.push('Ansatt: '+r.ansettelsesdato);
+    if(r.isSuperuser&&r.lisens)meta.push(r.lisens);
+    html+='<div class="split-row" style="'+rowBg+'">'
+      +'<div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">'
+      +'<div style="width:34px;height:34px;border-radius:50%;background:'+bg+';display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:'+col+';flex-shrink:0">'+initials+'</div>'
+      +'<div style="min-width:0">'
+      +'<div style="font-weight:600;font-size:13px">'+r.name+(r.isSuperuser?' <i class="ti ti-star" style="color:#7c3aed;font-size:12px"></i>':(!r.found&&!r.isSuperuser?' <i class="ti ti-alert-triangle" style="color:#d97706;font-size:12px"></i>':isInactive?' <i class="ti ti-user-x" style="color:#dc2626;font-size:12px"></i>':''))+'</div>'
+      +'<div style="font-size:11px;color:#9ca3af;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+r.email+(meta.length?' · '+meta.join(' · '):'')+'</div>'
+      +'</div></div>'
+      +'<div style="flex-shrink:0">'+statusTag+'</div>'
+      +'</div>';
+  });
+  html+='</div></div>';
+  document.getElementById('lookup-output').innerHTML=html;
+}
 
 // ─────────────────────────────────────────────
 // EMPLOYEES

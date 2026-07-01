@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+|1<!DOCTYPE html>
 <html lang="no">
 <head>
 <meta charset="UTF-8">
@@ -143,14 +143,7 @@ tr:hover td{background:#f9fafb}
 .auth-toggle a:hover{text-decoration:underline}
 .auth-error{background:#fef2f2;color:#991b1b;border:1px solid #fecaca;border-radius:7px;padding:10px 12px;font-size:13px;margin-bottom:12px}
 .auth-success{background:#d1fae5;color:#065f46;border:1px solid #a7f3d0;border-radius:7px;padding:10px 12px;font-size:13px;margin-bottom:12px}
-.setup-screen{display:flex;align-items:center;justify-content:center;min-height:80vh;padding:40px 24px}
-.setup-card{background:#fff;border:1px solid #e2e4e8;border-radius:14px;padding:36px;max-width:560px;width:100%;box-shadow:0 4px 20px rgba(0,0,0,.08)}
-.setup-card h3{font-size:20px;font-weight:600;color:#0D2240;margin-bottom:8px}
-.setup-card p{font-size:13px;color:#6b7280;margin-bottom:20px;line-height:1.6}
-.step{display:flex;gap:14px;margin-bottom:16px;align-items:flex-start}
-.step-num{width:26px;height:26px;border-radius:50%;background:#009EB2;color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
-.step-text{font-size:13px;color:#374151;line-height:1.5}
-.step-text code{background:#f3f4f6;padding:1px 6px;border-radius:4px;font-family:monospace;font-size:12px;color:#0D2240}
+
 .loading-overlay{display:none;position:fixed;inset:0;background:rgba(255,255,255,.85);z-index:500;align-items:center;justify-content:center;flex-direction:column;gap:12px}
 .loading-overlay.show{display:flex}
 .spinner{width:36px;height:36px;border:3px solid #e2e4e8;border-top-color:#009EB2;border-radius:50%;animation:spin .7s linear infinite}
@@ -173,7 +166,7 @@ tr:hover td{background:#f9fafb}
     <div class="auth-card">
       <div class="auth-logo">
         <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><polygon points="14,2 26,9 26,19 14,26 2,19 2,9" fill="#009EB2" opacity=".15"/><polygon points="14,6 22,11 22,17 14,22 6,17 6,11" fill="#009EB2"/></svg>
-        <span>bravida</span>
+        <span>Bravida</span>
       </div>
       <h3>Logg inn</h3>
       <p>Fordelingsnøkkel – intern applikasjon</p>
@@ -182,7 +175,7 @@ tr:hover td{background:#f9fafb}
       <div class="auth-field"><label>E-post</label><input id="login-email" type="email" placeholder="fornavn.etternavn@bravida.no" onkeydown="if(event.key==='Enter')doLogin()"></div>
       <div class="auth-field"><label>Passord</label><input id="login-password" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
       <button class="auth-btn" onclick="doLogin()"><i class="ti ti-login"></i> Logg inn</button>
-      <div class="auth-toggle"><a onclick="showForgot()">Glemt passord?</a> &nbsp;·&nbsp; <a onclick="showScreen('screen-setup')" style="color:#9ca3af;font-size:12px">Sett opp database</a></div>
+      <div class="auth-toggle"><a onclick="showForgot()">Glemt passord?</a></div>
     </div>
   </div>
 </div>
@@ -193,7 +186,7 @@ tr:hover td{background:#f9fafb}
     <div class="auth-card">
       <div class="auth-logo">
         <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><polygon points="14,2 26,9 26,19 14,26 2,19 2,9" fill="#009EB2" opacity=".15"/><polygon points="14,6 22,11 22,17 14,22 6,17 6,11" fill="#009EB2"/></svg>
-        <span>bravida</span>
+        <span>Bravida</span>
       </div>
       <h3>Tilbakestill passord</h3>
       <p>Skriv inn din e-post så sender vi en lenke for å sette nytt passord.</p>
@@ -205,32 +198,7 @@ tr:hover td{background:#f9fafb}
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════
-     SETUP SCREEN (shown on first run)
-═══════════════════════════════════════ -->
-<div id="screen-setup" style="display:none">
-  <div class="setup-screen" style="min-height:100vh;background:linear-gradient(135deg,#0D2240,#1a3a5c)">
-    <div class="setup-card">
-      <h3>Koble til database</h3>
-      <p>Appen bruker Supabase som gratis database. Dataene dine lagres sikkert online — tilgjengelig fra alle datamaskiner, aldri tapt.</p>
-      <div class="step"><div class="step-num">1</div><div class="step-text">Gå til <strong>supabase.com</strong>, opprett gratis konto og et nytt prosjekt. Velg Frankfurt som region.</div></div>
-      <div class="step"><div class="step-num">2</div><div class="step-text">Gå til <strong>SQL Editor → New Query</strong>, lim inn innholdet fra <code>1_supabase_setup.sql</code> og klikk <strong>Run</strong>. Gjør det samme med <code>2_supabase_auth_setup.sql</code>.</div></div>
-      <div class="step"><div class="step-num">3</div><div class="step-text">Gå til <strong>Authentication → Email Templates</strong> og aktiver «Confirm email». Gå deretter til <strong>Project Settings → API</strong> og kopier URL og anon key.</div></div>
-      <div style="margin-top:20px;display:flex;flex-direction:column;gap:10px">
-        <div><label>Supabase Project URL</label><input id="setup-url" placeholder="https://xxxxxxxxxxxx.supabase.co"></div>
-        <div><label>Supabase Anon Key</label><input id="setup-key" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."></div>
-      </div>
-      <div id="setup-error" style="margin-top:10px"></div>
-      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px">
-        <button class="btn btn-primary" onclick="saveConfig()"><i class="ti ti-plug"></i> Koble til &amp; test</button>
-      </div>
-    </div>
-  </div>
-</div>
 
-<!-- ═══════════════════════════════════════
-     MAIN APP (shown when logged in)
-═══════════════════════════════════════ -->
 <div id="screen-app" style="display:none">
 
 <div class="topbar">
@@ -248,7 +216,7 @@ tr:hover td{background:#f9fafb}
 <div class="navbar">
   <div class="nav-logo">
     <svg width="24" height="24" viewBox="0 0 28 28" fill="none"><polygon points="14,2 26,9 26,19 14,26 2,19 2,9" fill="#009EB2" opacity=".15"/><polygon points="14,6 22,11 22,17 14,22 6,17 6,11" fill="#009EB2"/></svg>
-    <span style="font-size:16px;font-weight:700;color:#0D2240;letter-spacing:-.5px">bravida</span>
+    <span style="font-size:16px;font-weight:700;color:#0D2240;letter-spacing:-.5px">Bravida</span>
   </div>
   <button class="nav-btn active" id="nb-dashboard" onclick="showPage('dashboard',this)">Dashboard</button>
   <button class="nav-btn" id="nb-register" onclick="showPage('register',this)">Register faktura</button>
@@ -278,7 +246,7 @@ tr:hover td{background:#f9fafb}
           <th class="xl-th" id="th-cost"><div class="xl-th-inner">Kostnad (NOK)<button class="xl-filter-btn" id="fb-cost" onclick="toggleDropdown('cost',event)"><i class="ti ti-filter"></i></button></div><div class="xl-dropdown" id="dd-cost"></div></th>
           <th class="xl-th" id="th-date"><div class="xl-th-inner">Dato<button class="xl-filter-btn" id="fb-date" onclick="toggleDropdown('date',event)"><i class="ti ti-filter"></i></button></div><div class="xl-dropdown" id="dd-date"></div></th>
           <th class="xl-th" id="th-status"><div class="xl-th-inner">Status<button class="xl-filter-btn" id="fb-status" onclick="toggleDropdown('status',event)"><i class="ti ti-filter"></i></button></div><div class="xl-dropdown" id="dd-status"></div></th>
-          <th class="xl-th" style="width:40px"><div class="xl-th-inner"></div></th>
+          <th class="xl-th" style="width:70px"><div class="xl-th-inner"></div></th>
         </tr></thead>
         <tbody id="inv-tbody"></tbody>
       </table>
@@ -486,8 +454,8 @@ tr:hover td{background:#f9fafb}
 // ─────────────────────────────────────────────
 // CONFIG
 // ─────────────────────────────────────────────
-var SUPABASE_URL=localStorage.getItem('sb_url')||'';
-var SUPABASE_KEY=localStorage.getItem('sb_key')||'';
+var SUPABASE_URL='https://amgwqvuemmkgsdfpltvt.supabase.co';
+var SUPABASE_KEY='sb_publishable_MDNK1T4NpH2MMAhOizKM0g_BeMV1Daa';
 var ACCESS_TOKEN='';
 var currentUser=null;
 
@@ -500,7 +468,7 @@ var openDropdown=null;
 // SCREEN MANAGEMENT
 // ─────────────────────────────────────────────
 function showScreen(id){
-  ['screen-setup','screen-login','screen-forgot','screen-app'].forEach(function(s){
+  ['screen-login','screen-forgot','screen-app'].forEach(function(s){
     document.getElementById(s).style.display='none';
   });
   document.getElementById(id).style.display='block';
@@ -523,7 +491,7 @@ function sbHeaders(useAuth){
 // AUTH
 // ─────────────────────────────────────────────
 async function doLogin(){
-  if(!SUPABASE_URL||!SUPABASE_KEY){showScreen('screen-setup');return;}
+  if(!SUPABASE_URL||!SUPABASE_KEY){document.getElementById('login-error').innerHTML='<div class="auth-error">Database ikke konfigurert. Kontakt administrator.</div>';return;}
   var email=document.getElementById('login-email').value.trim();
   var password=document.getElementById('login-password').value;
   if(!email||!password){document.getElementById('login-error').innerHTML='<div class="auth-error">Fyll inn e-post og passord.</div>';return;}
@@ -586,24 +554,6 @@ async function tryRefreshToken(){
   }catch(e){return false;}
 }
 
-// ─────────────────────────────────────────────
-// SETUP / CONFIG
-// ─────────────────────────────────────────────
-function saveConfig(){
-  var url=document.getElementById('setup-url').value.trim().replace(/\/$/,'');
-  var key=document.getElementById('setup-key').value.trim();
-  if(!url||!key){showSetupError('Fyll inn begge feltene.');return;}
-  SUPABASE_URL=url;SUPABASE_KEY=key;
-  setLoading(true,'Tester tilkobling…');
-  fetch(url+'/rest/v1/invoices?limit=1',{headers:{'apikey':key,'Authorization':'Bearer '+key}})
-    .then(function(r){
-      if(!r.ok)throw new Error('HTTP '+r.status+' — sjekk URL og nøkkel, og at du har kjørt SQL-skriptene.');
-      localStorage.setItem('sb_url',url);localStorage.setItem('sb_key',key);
-      setLoading(false);showLogin();
-    })
-    .catch(function(e){setLoading(false);showSetupError(e.message);});
-}
-function showSetupError(msg){document.getElementById('setup-error').innerHTML='<div class="alert alert-err">'+msg+'</div>';}
 
 // ─────────────────────────────────────────────
 // BOOT
@@ -763,9 +713,16 @@ function renderMetrics(){
 function renderInvoiceTable(){
   var list=[...getFilteredInvoices()].reverse();var tbody=document.getElementById('inv-tbody');if(!tbody)return;
   if(!list.length){tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:32px;color:#9ca3af">'+(invoices.length?'Ingen fakturaer matcher filteret.':'Ingen fakturaer registrert enda.')+'</td></tr>';return;}
-  tbody.innerHTML=list.map(function(i){return'<tr><td><span class="inv-link" onclick="goToSplit(\''+i.id+'\')">'+i.invno+'</span></td><td>'+i.sender+'</td><td>'+(i.supplier||'—')+'</td><td style="font-weight:600;text-align:right">'+fmt(i.cost)+'</td><td>'+i.date+'</td><td><span class="tag '+(i.split?'tag-dist':'tag-pend')+'">'+(i.split?'Fordelt':'Venter')+'</span></td><td>'+(i.split?'<button class="btn-icon" onclick="openReport(\''+i.id+'\')" title="Se rapport"><i class="ti ti-table"></i></button>':'')+'</td></tr>';}).join('');
+  tbody.innerHTML=list.map(function(i){return'<tr><td><span class="inv-link" onclick="'+(i.split?'openReport(\''+i.id+'\')':'goToSplit(\''+i.id+'\')')+'">'+i.invno+'</span></td><td>'+i.sender+'</td><td>'+(i.supplier||'—')+'</td><td style="font-weight:600;text-align:right">'+fmt(i.cost)+'</td><td>'+i.date+'</td><td><span class="tag '+(i.split?'tag-dist':'tag-pend')+'">'+(i.split?'Fordelt':'Venter')+'</span></td><td style="white-space:nowrap">'+(i.split?'<button class="btn-icon" onclick="openReport(\''+i.id+'\')" title="Se rapport"><i class="ti ti-table"></i></button>':'')+'<button class="btn-icon danger" onclick="deleteInvoice(\''+i.id+'\')" title="Slett faktura"><i class="ti ti-trash"></i></button></td></tr>';}).join('');
 }
 function goToSplit(id){showPage('split',document.getElementById('nb-split'));populateSplitSelect();document.getElementById('split-invoice-select').value=id;fillInvoiceDetails();}
+async function deleteInvoice(id){
+  var inv=invoices.find(function(i){return i.id===id;});if(!inv)return;
+  if(!confirm('Slette faktura '+inv.invno+' ('+fmt(inv.cost)+' NOK)? Dette kan ikke angres.'))return;
+  setLoading(true,'Sletter faktura…');
+  try{await sbDelete('invoices','id',id);invoices=invoices.filter(function(i){return i.id!==id;});setLoading(false);renderDashboard();populateSplitSelect();}
+  catch(e){setLoading(false);alert('Feil: '+e.message);}
+}
 
 // ─────────────────────────────────────────────
 // INVOICES
@@ -782,11 +739,37 @@ async function registerInvoice(){
 }
 function clearRegForm(){['reg-sender','reg-invno','reg-date','reg-cost','reg-supplier'].forEach(function(id){document.getElementById(id).value='';}); }
 function populateSplitSelect(){var sel=document.getElementById('split-invoice-select');var cur=sel.value;sel.innerHTML='<option value="">— velg faktura —</option>';invoices.filter(function(inv){return!inv.split;}).forEach(function(inv){var o=document.createElement('option');o.value=inv.id;o.textContent=inv.invno+' · '+fmt(inv.cost)+' NOK · '+inv.date;sel.appendChild(o);});if(cur)sel.value=cur;}
-function fillInvoiceDetails(){var id=document.getElementById('split-invoice-select').value;var inv=invoices.find(function(i){return i.id===id;});document.getElementById('split-invno').value=inv?inv.invno:'';document.getElementById('split-cost').value=inv?fmt(inv.cost):'';document.getElementById('split-sender').value=inv?inv.sender:'';document.getElementById('split-date').value=inv?inv.date:'';document.getElementById('split-output').innerHTML='';}
+function fillInvoiceDetails(){var id=document.getElementById('split-invoice-select').value;var inv=invoices.find(function(i){return i.id===id;});document.getElementById('split-invno').value=inv?inv.invno:'';document.getElementById('split-cost').value=inv?fmt(inv.cost):'';document.getElementById('split-sender').value=inv?inv.sender:'';document.getElementById('split-date').value=inv?inv.date:'';document.getElementById('split-output').innerHTML='';splitInv=null;splitResults=[];splitEditIndex=-1;}
 
 // ─────────────────────────────────────────────
 // SPLIT
 // ─────────────────────────────────────────────
+var splitInv=null,splitResults=[],splitEditIndex=-1;
+
+function normalizeEmail(email){
+  return(email||'').trim().toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'') // strip accents (é→e, è→e, etc.)
+    .replace(/æ/g,'ae').replace(/ø/g,'o').replace(/å/g,'a'); // Norwegian letters
+}
+
+function lookupOneEmail(email){
+  email=(email||'').trim().toLowerCase();
+  var superSet=new Set(superusers.map(function(s){return s.epost;}));
+  if(superSet.has(email)){var su=superusers.find(function(s){return s.epost===email;});return{email:email,found:true,isSuperuser:true,name:su.fulltNavn||email,koststedNavn:'—',koststed:su.koststed||'—',status:'superuser',lisens:su.lisens||''};}
+  var emp=employees.find(function(e){return e.epost===email;});
+  var result={email:email,found:!!emp,isSuperuser:false,name:emp?emp.fulltNavn:'Ukjent',koststedNavn:emp?emp.koststedNavn:'—',koststed:emp?emp.koststed:'—',status:emp?emp.status:'?'};
+  if(!emp){
+    var norm=normalizeEmail(email);
+    if(norm!==email){
+      var suSug=superusers.find(function(s){return normalizeEmail(s.epost)===norm;});
+      var empSug=employees.find(function(e){return normalizeEmail(e.epost)===norm;});
+      if(suSug)result.suggestion=suSug.epost;
+      else if(empSug)result.suggestion=empSug.epost;
+    }
+  }
+  return result;
+}
+
 function runSplit(){
   var id=document.getElementById('split-invoice-select').value;var inv=invoices.find(function(i){return i.id===id;});
   if(!inv){alert('Velg en faktura først.');return;}
@@ -794,27 +777,50 @@ function runSplit(){
   var emails=raw.split(/[\n,;]+/).map(function(e){return e.trim().toLowerCase();}).filter(Boolean);
   if(!emails.length){alert('Lim inn minst én e-post.');return;}
   if(!employees.length){alert('Ansattdatabasen er tom. Importer ansatte først.');return;}
-  var superSet=new Set(superusers.map(function(s){return s.epost;}));
-  var results=emails.map(function(email){
-    if(superSet.has(email)){var su=superusers.find(function(s){return s.epost===email;});return{email:email,found:true,isSuperuser:true,name:su.fulltNavn||email,koststedNavn:'—',koststed:su.koststed||'—',status:'superuser',lisens:su.lisens||''};}
-    var emp=employees.find(function(e){return e.epost===email;});
-    return{email:email,found:!!emp,isSuperuser:false,name:emp?emp.fulltNavn:'Ukjent',koststedNavn:emp?emp.koststedNavn:'—',koststed:emp?emp.koststed:'—',status:emp?emp.status:'?'};
-  });
+  splitInv=inv;splitEditIndex=-1;
+  splitResults=emails.map(lookupOneEmail);
+  renderSplitPreview();
+}
+
+function startEditSplitRow(i){splitEditIndex=i;renderSplitPreview();}
+function cancelEditSplitRow(){splitEditIndex=-1;renderSplitPreview();}
+function saveEditSplitRow(i){
+  var input=document.getElementById('split-edit-input');
+  var newEmail=(input?input.value:'').trim().toLowerCase();
+  if(!newEmail){alert('Skriv inn en e-postadresse.');return;}
+  splitResults[i]=lookupOneEmail(newEmail);
+  splitEditIndex=-1;
+  renderSplitPreview();
+}
+function applySplitSuggestion(i){
+  var sug=splitResults[i]&&splitResults[i].suggestion;
+  if(!sug)return;
+  splitResults[i]=lookupOneEmail(sug);
+  renderSplitPreview();
+}
+
+function renderSplitPreview(){
+  var inv=splitInv,results=splitResults;
+  if(!inv){document.getElementById('split-output').innerHTML='';return;}
   var active=results.filter(function(r){return !r.isSuperuser&&r.status==='N';});
   var inactive=results.filter(function(r){return !r.isSuperuser&&r.found&&r.status!=='N';});
   var notFound=results.filter(function(r){return !r.isSuperuser&&!r.found;});
   var suFound=results.filter(function(r){return r.isSuperuser;});
   var splitAmt=active.length>0?inv.cost/active.length:0;
-  var html='<div class="card"><div class="section-head"><span style="font-size:14px;font-weight:600;color:#0D2240">Søkeresultat</span><div style="display:flex;gap:6px;flex-wrap:wrap"><span class="badge">'+emails.length+' e-poster</span><span class="badge" style="background:#d1fae5;color:#065f46;border-color:#a7f3d0">'+active.length+' aktive (N)</span>'+(suFound.length?'<span class="badge" style="background:#ede9fe;color:#4c1d95">'+suFound.length+' superbruker'+(suFound.length>1?'e':'')+'</span>':'')+(inactive.length?'<span class="badge">'+inactive.length+' inaktive</span>':'')+(notFound.length?'<span class="badge" style="background:#fef3c7;color:#92400e">'+notFound.length+' ikke funnet</span>':'')+'</div></div>';
+  var html='<div class="card"><div class="section-head"><span style="font-size:14px;font-weight:600;color:#0D2240">Søkeresultat</span><div style="display:flex;gap:6px;flex-wrap:wrap"><span class="badge">'+results.length+' e-poster</span><span class="badge" style="background:#d1fae5;color:#065f46;border-color:#a7f3d0">'+active.length+' aktive (N)</span>'+(suFound.length?'<span class="badge" style="background:#ede9fe;color:#4c1d95">'+suFound.length+' superbruker'+(suFound.length>1?'e':'')+'</span>':'')+(inactive.length?'<span class="badge">'+inactive.length+' inaktive</span>':'')+(notFound.length?'<span class="badge" style="background:#fef3c7;color:#92400e">'+notFound.length+' ikke funnet</span>':'')+'</div></div>';
   if(active.length===0){html+='<div class="alert alert-err">Ingen aktive (N) ansatte funnet — kan ikke fordele.</div>';}
   else{html+='<div class="alert alert-info"><i class="ti ti-check"></i> Fordeler <strong>'+fmt(inv.cost)+'</strong> NOK likt mellom <strong>'+active.length+'</strong> aktive ansatte = <strong>'+fmt(splitAmt)+'</strong> NOK per person'+(suFound.length?' · '+suFound.length+' superbruker'+(suFound.length>1?'e':'')+' ekskludert':'')+'</div>';}
   html+='<div style="border:1px solid #f3f4f6;border-radius:8px;overflow:hidden">';
-  results.forEach(function(r){
+  results.forEach(function(r,i){
+    if(i===splitEditIndex){
+      html+='<div class="split-row" style="background:#f0fdfe"><div style="display:flex;align-items:center;gap:10px;flex:1"><input id="split-edit-input" value="'+r.email+'" placeholder="ny.epost@bravida.no" style="flex:1" onkeydown="if(event.key===\'Enter\')saveEditSplitRow('+i+');if(event.key===\'Escape\')cancelEditSplitRow();"></div><div style="display:flex;gap:6px;flex-shrink:0"><button class="btn btn-primary" style="padding:6px 12px" onclick="saveEditSplitRow('+i+')"><i class="ti ti-check"></i></button><button class="btn btn-ghost" style="padding:6px 12px" onclick="cancelEditSplitRow()"><i class="ti ti-x"></i></button></div></div>';
+      return;
+    }
     var isActive=!r.isSuperuser&&r.status==='N';
     var initials=r.name.split(' ').filter(Boolean).slice(0,2).map(function(n){return n[0];}).join('').toUpperCase()||'?';
     var bg=r.isSuperuser?'#ede9fe':isActive?'#d1fae5':r.found?'#f3f4f6':'#fef3c7';
     var col=r.isSuperuser?'#4c1d95':isActive?'#065f46':r.found?'#4b5563':'#92400e';
-    html+='<div class="split-row" style="'+(r.isSuperuser?'background:#f5f3ff33;':'')+'"><div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0"><div style="width:34px;height:34px;border-radius:50%;background:'+bg+';display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:'+col+';flex-shrink:0">'+initials+'</div><div style="min-width:0"><div style="font-weight:600;font-size:13px">'+r.name+(r.isSuperuser?' <i class="ti ti-star" style="color:#7c3aed;font-size:12px"></i>':'')+'</div><div style="font-size:11px;color:#9ca3af;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+r.email+(r.koststed!=='—'?' · '+r.koststed:'')+(r.isSuperuser&&r.lisens?' · '+r.lisens:'')+'</div></div></div><div style="display:flex;align-items:center;gap:10px;flex-shrink:0">'+(r.isSuperuser?'<span class="tag tag-super"><i class="ti ti-star" style="font-size:10px"></i> Superbruker</span>':'<span class="tag '+(r.status==='N'?'tag-n':r.found?'tag-s':'tag-warn')+'">'+(r.found?(r.status==='N'?'N – Aktiv':'S – Inaktiv'):'Ikke funnet')+'</span>')+'<span style="font-weight:600;font-size:13px;min-width:110px;text-align:right;color:'+(isActive?'#0D2240':'#9ca3af')+'">'+( isActive?fmt(splitAmt)+' NOK':'—')+'</span></div></div>';
+    html+='<div>'+'<div class="split-row" style="'+(r.isSuperuser?'background:#f5f3ff33;':'')+(r.suggestion?'border-bottom:none;':'')+'"><div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0"><div style="width:34px;height:34px;border-radius:50%;background:'+bg+';display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:'+col+';flex-shrink:0">'+initials+'</div><div style="min-width:0"><div style="font-weight:600;font-size:13px">'+r.name+(r.isSuperuser?' <i class="ti ti-star" style="color:#7c3aed;font-size:12px"></i>':'')+'</div><div style="font-size:11px;color:#9ca3af;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+r.email+(r.koststed!=='—'?' · '+r.koststed:'')+(r.isSuperuser&&r.lisens?' · '+r.lisens:'')+'</div></div></div><div style="display:flex;align-items:center;gap:10px;flex-shrink:0">'+(r.isSuperuser?'<span class="tag tag-super"><i class="ti ti-star" style="font-size:10px"></i> Superbruker</span>':'<span class="tag '+(r.status==='N'?'tag-n':r.found?'tag-s':'tag-warn')+'">'+(r.found?(r.status==='N'?'N – Aktiv':'S – Inaktiv'):'Ikke funnet')+'</span>')+'<span style="font-weight:600;font-size:13px;min-width:90px;text-align:right;color:'+(isActive?'#0D2240':'#9ca3af')+'">'+( isActive?fmt(splitAmt)+' NOK':'—')+'</span><button class="btn-icon" title="Endre e-post" onclick="startEditSplitRow('+i+')"><i class="ti ti-pencil"></i></button></div></div>'+(r.suggestion?'<div class="split-row" style="padding-top:0;padding-bottom:8px;border-bottom:1px solid #f3f4f6"><div style="font-size:12px;color:#92400e;background:#fef3c7;border-radius:6px;padding:6px 10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap"><i class="ti ti-bulb" style="flex-shrink:0"></i> Mente du <strong>'+r.suggestion+'</strong>? <button class="btn btn-primary" style="padding:3px 10px;font-size:11px" onclick="applySplitSuggestion('+i+')">Bruk denne</button></div></div>':'')+'</div>';
   });
   html+='</div>';
   if(active.length>0){html+='<div class="total-bar"><span style="opacity:.7">Totalt fordelt</span><span style="font-weight:700;font-size:16px">'+fmt(inv.cost)+' NOK</span></div><div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px"><button class="btn btn-primary" id="confirm-btn"><i class="ti ti-check"></i> Bekreft &amp; se rapport</button></div>';}
@@ -822,13 +828,15 @@ function runSplit(){
   document.getElementById('split-output').innerHTML=html;
   inv._pendingSplit={active:active,splitAmt:splitAmt,allResults:results};
   if(active.length>0){document.getElementById('confirm-btn').addEventListener('click',function(){confirmSplit(inv.id);});}
+  if(splitEditIndex>-1){var inp=document.getElementById('split-edit-input');if(inp){inp.focus();inp.select();}}
 }
+
 
 async function confirmSplit(id){
   var inv=invoices.find(function(i){return i.id===id;});if(!inv||!inv._pendingSplit){alert('Kjør fordelingen først.');return;}
   inv.split=true;inv.splitData=inv._pendingSplit;delete inv._pendingSplit;
   setLoading(true,'Lagrer fordeling…');
-  try{await sbUpdate('invoices','id',id,{split:true,split_data:inv.splitData});setLoading(false);renderDashboard();openReport(id);}
+  try{await sbUpdate('invoices','id',id,{split:true,split_data:inv.splitData});splitInv=null;splitResults=[];splitEditIndex=-1;setLoading(false);renderDashboard();openReport(id);}
   catch(e){setLoading(false);alert('Feil: '+e.message);}
 }
 

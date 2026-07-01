@@ -1,10 +1,12 @@
-|1<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="no">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Bravida – Fordelingsnøkkel</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -258,6 +260,19 @@ tr:hover td{background:#f9fafb}
 <div class="page" id="page-register">
   <h2>Register Faktura</h2>
   <p class="subtitle">Legg inn faktura før splitting av kostnad</p>
+  <div class="card">
+    <div class="section-head">
+      <span style="font-size:14px;font-weight:600;color:#0D2240">Skann faktura</span>
+      <span style="font-size:11px;color:#6b7280">Bilde eller PDF · fyller ut feltene under automatisk</span>
+    </div>
+    <div class="drop-zone" id="scan-drop-zone" onclick="document.getElementById('scan-file-input').click()" ondragover="handleScanDragOver(event)" ondragleave="handleScanDragLeave(event)" ondrop="handleScanDrop(event)">
+      <i class="ti ti-scan"></i>
+      <p>Drag &amp; drop et bilde eller PDF av fakturaen her, eller klikk for å laste opp</p>
+      <small>Fakturanr., leverandør, dato og sum eks. mva hentes automatisk — sjekk alltid verdiene før lagring</small>
+    </div>
+    <input type="file" id="scan-file-input" accept=".jpg,.jpeg,.png,.pdf" style="display:none" onchange="handleScanFileSelect(event)">
+    <div id="scan-status"></div>
+  </div>
   <div class="card">
     <div class="form-row three">
       <div><label>Navn</label><input id="reg-sender" placeholder="Ditt navn"></div>
@@ -737,7 +752,149 @@ async function registerInvoice(){
   try{await sbUpsert('invoices',invToDb(inv),'id');invoices.push(inv);setLoading(false);renderDashboard();populateSplitSelect();clearRegForm();alert('Faktura lagret!');}
   catch(e){setLoading(false);alert('Feil: '+e.message);}
 }
-function clearRegForm(){['reg-sender','reg-invno','reg-date','reg-cost','reg-supplier'].forEach(function(id){document.getElementById(id).value='';}); }
+function clearRegForm(){['reg-sender','reg-invno','reg-date','reg-cost','reg-supplier'].forEach(function(id){document.getElementById(id).value='';});document.getElementById('scan-status').innerHTML='';}
+
+// ─────────────────────────────────────────────
+// INVOICE SCAN (Tesseract OCR + PDF.js)
+// ─────────────────────────────────────────────
+if(window['pdfjsLib']){pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';}
+
+function handleScanDragOver(e){e.preventDefault();document.getElementById('scan-drop-zone').classList.add('drag-over');}
+function handleScanDragLeave(){document.getElementById('scan-drop-zone').classList.remove('drag-over');}
+function handleScanDrop(e){e.preventDefault();document.getElementById('scan-drop-zone').classList.remove('drag-over');if(e.dataTransfer.files.length)scanInvoiceFile(e.dataTransfer.files[0]);}
+function handleScanFileSelect(e){if(e.target.files.length)scanInvoiceFile(e.target.files[0]);e.target.value='';}
+
+async function pdfFileToImageDataUrl(file){
+  var buf=await file.arrayBuffer();
+  var pdf=await pdfjsLib.getDocument({data:buf}).promise;
+  var page=await pdf.getPage(1);
+  var scale=2.2; // higher scale = better OCR accuracy
+  var viewport=page.getViewport({scale:scale});
+  var canvas=document.createElement('canvas');
+  canvas.width=viewport.width;canvas.height=viewport.height;
+  await page.render({canvasContext:canvas.getContext('2d'),viewport:viewport}).promise;
+  return canvas.toDataURL('image/png');
+}
+
+async function scanInvoiceFile(file){
+  var statusEl=document.getElementById('scan-status');
+  var isPdf=file.type==='application/pdf'||/\.pdf$/i.test(file.name);
+  var isImg=/^image\//.test(file.type)||/\.(jpe?g|png)$/i.test(file.name);
+  if(!isPdf&&!isImg){statusEl.innerHTML='<div class="alert alert-err">Ugyldig filtype — bruk bilde (jpg/png) eller PDF.</div>';return;}
+  statusEl.innerHTML='<div class="alert alert-info"><i class="ti ti-loader-2"></i> Forbereder skann…</div>';
+  try{
+    var imageSource;
+    if(isPdf){
+      if(!window['pdfjsLib'])throw new Error('PDF-biblioteket lastet ikke inn. Sjekk internettforbindelsen.');
+      imageSource=await pdfFileToImageDataUrl(file);
+    }else{
+      imageSource=await new Promise(function(res,rej){var r=new FileReader();r.onload=function(){res(r.result);};r.onerror=rej;r.readAsDataURL(file);});
+    }
+    var result=await Tesseract.recognize(imageSource,'nor+eng',{
+      logger:function(m){
+        if(m.status&&m.progress!=null){
+          statusEl.innerHTML='<div class="alert alert-info"><i class="ti ti-loader-2"></i> '+scanStatusLabel(m.status)+' ('+Math.round(m.progress*100)+'%)</div>';
+        }
+      }
+    });
+    var text=result.data.text||'';
+    var parsed=parseInvoiceText(text);
+    applyScanSuggestions(parsed);
+    var foundCount=Object.keys(parsed).filter(function(k){return parsed[k];}).length;
+    if(foundCount===0){
+      statusEl.innerHTML='<div class="alert alert-warn">Fant ingen felter automatisk — fyll inn manuelt.</div>';
+    }else{
+      statusEl.innerHTML='<div class="alert alert-info"><i class="ti ti-wand"></i> Hentet fra skann — sjekk verdiene under før du lagrer.</div>';
+    }
+  }catch(e){
+    statusEl.innerHTML='<div class="alert alert-err">Kunne ikke lese fakturaen: '+e.message+'</div>';
+  }
+}
+
+function scanStatusLabel(status){
+  var map={'loading tesseract core':'Laster OCR-motor','initializing tesseract':'Klargjør OCR-motor','loading language traineddata':'Laster språkdata','initializing api':'Starter','recognizing text':'Leser tekst'};
+  return map[status]||status;
+}
+
+// Parses raw OCR text and returns best-guess field values (or null if not found)
+function parseInvoiceText(text){
+  var lines=text.split('\n').map(function(l){return l.trim();}).filter(Boolean);
+  var flat=text.replace(/\r/g,'');
+
+  function findAfterLabel(labels,valuePattern){
+    for(var li=0;li<lines.length;li++){
+      for(var l=0;l<labels.length;l++){
+        var idx=lines[li].toLowerCase().indexOf(labels[l]);
+        if(idx===-1)continue;
+        // try same line, after the label
+        var sameLine=lines[li].slice(idx+labels[l].length);
+        var m=sameLine.match(valuePattern);
+        if(m)return m[1]||m[0];
+        // try next line
+        if(lines[li+1]){var m2=lines[li+1].match(valuePattern);if(m2)return m2[1]||m2[0];}
+      }
+    }
+    return null;
+  }
+
+  // Fakturanummer
+  var invno=findAfterLabel(['fakturanr','faktura nr','fakturanummer','invoice no','invoice number','invoice #','faktura#'],/[:.\s]*([A-Za-z0-9\-\/]{3,})/);
+
+  // Dates (dd.mm.yyyy, dd/mm/yyyy, dd-mm-yyyy, or yyyy-mm-dd)
+  var datePattern=/(\d{1,2}[.\-\/]\d{1,2}[.\-\/]\d{2,4}|\d{4}-\d{2}-\d{2})/;
+  var invDateRaw=findAfterLabel(['fakturadato','faktura dato','invoice date','dato:','dato '],datePattern);
+
+  // Sum eks. mva
+  var numPattern=/([\d]{1,3}(?:[.\s]\d{3})*(?:,\d{2})?|\d+(?:\.\d{2})?)/;
+  var sumRaw=findAfterLabel(['sum eks','eks. mva','eks mva','netto beløp','nettobeløp','beløp eks','sum ekskl','ekskl. mva','ekskl mva','subtotal'],numPattern);
+
+  // Supplier / company name — usually one of the first non-numeric lines of the document
+  var supplier=null;
+  for(var i=0;i<Math.min(lines.length,6);i++){
+    var l=lines[i];
+    if(l.length<3)continue;
+    if(/^\d+$/.test(l))continue;
+    if(datePattern.test(l))continue;
+    if(/faktura|invoice/i.test(l)&&l.length<15)continue;
+    supplier=l;break;
+  }
+
+  return{
+    invno:invno?invno.trim():null,
+    date:invDateRaw?normalizeDateString(invDateRaw):null,
+    cost:sumRaw?parseNorwegianNumber(sumRaw):null,
+    supplier:supplier
+  };
+}
+
+function normalizeDateString(raw){
+  raw=raw.trim();
+  var m=raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(m)return raw;
+  m=raw.match(/^(\d{1,2})[.\-\/](\d{1,2})[.\-\/](\d{2,4})$/);
+  if(m){
+    var d=m[1].padStart(2,'0'),mo=m[2].padStart(2,'0'),y=m[3];
+    if(y.length===2)y='20'+y;
+    return y+'-'+mo+'-'+d;
+  }
+  return null;
+}
+
+function parseNorwegianNumber(raw){
+  raw=raw.trim().replace(/\s/g,'');
+  // Norwegian format: 12.345,67 or 12345,67 — dot=thousands, comma=decimal
+  if(/,\d{2}$/.test(raw)){raw=raw.replace(/\./g,'').replace(',','.');}
+  else{raw=raw.replace(/,/g,'');}
+  var n=parseFloat(raw);
+  return isNaN(n)?null:n;
+}
+
+function applyScanSuggestions(parsed){
+  if(parsed.invno)document.getElementById('reg-invno').value=parsed.invno;
+  if(parsed.date)document.getElementById('reg-date').value=parsed.date;
+  if(parsed.cost!=null)document.getElementById('reg-cost').value=parsed.cost;
+  if(parsed.supplier)document.getElementById('reg-supplier').value=parsed.supplier;
+}
 function populateSplitSelect(){var sel=document.getElementById('split-invoice-select');var cur=sel.value;sel.innerHTML='<option value="">— velg faktura —</option>';invoices.filter(function(inv){return!inv.split;}).forEach(function(inv){var o=document.createElement('option');o.value=inv.id;o.textContent=inv.invno+' · '+fmt(inv.cost)+' NOK · '+inv.date;sel.appendChild(o);});if(cur)sel.value=cur;}
 function fillInvoiceDetails(){var id=document.getElementById('split-invoice-select').value;var inv=invoices.find(function(i){return i.id===id;});document.getElementById('split-invno').value=inv?inv.invno:'';document.getElementById('split-cost').value=inv?fmt(inv.cost):'';document.getElementById('split-sender').value=inv?inv.sender:'';document.getElementById('split-date').value=inv?inv.date:'';document.getElementById('split-output').innerHTML='';splitInv=null;splitResults=[];splitEditIndex=-1;}
 
@@ -811,7 +968,11 @@ function renderSplitPreview(){
   if(active.length===0){html+='<div class="alert alert-err">Ingen aktive (N) ansatte funnet — kan ikke fordele.</div>';}
   else{html+='<div class="alert alert-info"><i class="ti ti-check"></i> Fordeler <strong>'+fmt(inv.cost)+'</strong> NOK likt mellom <strong>'+active.length+'</strong> aktive ansatte = <strong>'+fmt(splitAmt)+'</strong> NOK per person'+(suFound.length?' · '+suFound.length+' superbruker'+(suFound.length>1?'e':'')+' ekskludert':'')+'</div>';}
   html+='<div style="border:1px solid #f3f4f6;border-radius:8px;overflow:hidden">';
-  results.forEach(function(r,i){
+  function statusLabel(r){return r.isSuperuser?'Superbruker':r.found?(r.status==='N'?'N – Aktiv':'S – Inaktiv'):'Ikke funnet';}
+  var order=results.map(function(r,i){return i;});
+  order.sort(function(a,b){var la=statusLabel(results[a]),lb=statusLabel(results[b]);return la<lb?-1:la>lb?1:0;});
+  order.forEach(function(i){
+    var r=results[i];
     if(i===splitEditIndex){
       html+='<div class="split-row" style="background:#f0fdfe"><div style="display:flex;align-items:center;gap:10px;flex:1"><input id="split-edit-input" value="'+r.email+'" placeholder="ny.epost@bravida.no" style="flex:1" onkeydown="if(event.key===\'Enter\')saveEditSplitRow('+i+');if(event.key===\'Escape\')cancelEditSplitRow();"></div><div style="display:flex;gap:6px;flex-shrink:0"><button class="btn btn-primary" style="padding:6px 12px" onclick="saveEditSplitRow('+i+')"><i class="ti ti-check"></i></button><button class="btn btn-ghost" style="padding:6px 12px" onclick="cancelEditSplitRow()"><i class="ti ti-x"></i></button></div></div>';
       return;
